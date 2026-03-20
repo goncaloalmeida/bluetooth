@@ -77,7 +77,7 @@ function updateReadings({ bpm, sats, perfusionIndex }) {
   }
 }
 
-export function createWelluePo6Session(writeCharacteristic) {
+export function createWelluePo6BSession(writeCharacteristic) {
   const decoder = new TextDecoder('utf-8');
   let buffer = new Uint8Array();
   let pollTimer = null;
@@ -190,3 +190,5 @@ export function createWelluePo6Session(writeCharacteristic) {
     },
   };
 }
+
+export const createWelluePo6Session = createWelluePo6BSession;

@@ -3,10 +3,8 @@
 ## 2026-03-20
 
 ### Added
-- Added multi-profile Bluetooth detection and connection flow.
-- Added support for legacy UART oximeter devices (`6e400001-b5a3-f393-e0a9-e50e24dcca9e`).
-- Added Wellue/Viatom PO6 adapter.
-- Added standard BLE PLX/HR adapter fallback.
+- Added dual-profile Bluetooth support for VTM 20F and Wellue/Viatom PO6B.
+- Added Wellue/Viatom PO6B adapter flow.
 - Added clearer Bluetooth UI error messages.
 - Added Windows clean-start script (`scripts/start-clean.ps1`) and npm helpers (`watch:clean`, `watch:clean:reinstall`).
 
@@ -17,4 +15,4 @@
 
 ### Compatibility
 - Original VIATOM VTM 20F flow remains supported.
-- Extended compatibility to additional BLE profile families.
+- Wellue/Viatom PO6B support added in this fork.

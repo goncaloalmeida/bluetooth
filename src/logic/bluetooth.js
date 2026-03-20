@@ -223,6 +223,19 @@ const PROFILES = [
 let device = null;
 let session = null;
 
+async function probeProfile(server) {
+  for (const candidate of PROFILES) {
+    try {
+      await server.getPrimaryService(candidate.serviceUuid);
+      return candidate;
+    } catch (err) {
+      // Keep probing known profile UUIDs.
+    }
+  }
+
+  return null;
+}
+
 async function toggleConnection() {
   try {
     if (device?.gatt?.connected) {
@@ -249,7 +262,7 @@ async function connect() {
 
   try {
     device = await navigator.bluetooth.requestDevice({
-      filters: DEVICE_FILTERS,
+      acceptAllDevices: true,
       optionalServices,
     });
   } catch (err) {
@@ -257,9 +270,9 @@ async function connect() {
       throw err;
     }
 
-    logWarn('Filtered scan found no known devices. Retrying with acceptAllDevices.');
+    logWarn('Unfiltered scan found no selectable device. Retrying with known-name filters.');
     device = await navigator.bluetooth.requestDevice({
-      acceptAllDevices: true,
+      filters: DEVICE_FILTERS,
       optionalServices,
     });
   }
@@ -273,7 +286,14 @@ async function connect() {
   const services = await server.getPrimaryServices();
   const serviceIds = new Set(services.map((service) => service.uuid));
   logInfo('Detected services', [...serviceIds]);
-  const profile = PROFILES.find((candidate) => serviceIds.has(candidate.serviceUuid));
+  let profile = PROFILES.find((candidate) => serviceIds.has(candidate.serviceUuid));
+
+  if (!profile) {
+    profile = await probeProfile(server);
+    if (profile) {
+      logWarn('Profile recovered by direct UUID probe', profile.id);
+    }
+  }
 
   if (!profile) {
     const hasOnlyGenericServices = serviceIds.size === 2
@@ -281,10 +301,10 @@ async function connect() {
       && serviceIds.has(GENERIC_ATTRIBUTE_SERVICE_UUID);
 
     if (hasOnlyGenericServices) {
-      throw new Error('Unsupported device. Only generic BLE services (1800/1801) are visible. This usually means the oximeter is not in the correct mode, is connected to another app, or a different nearby device was selected.');
+      throw new Error('Unsupported device. Only generic BLE services (1800/1801) are visible. This build officially supports only VTM 20F and Wellue/Viatom PO6B. Usually this means the oximeter is not in the correct mode, is connected to another app, or a different nearby device was selected.');
     }
 
-    throw new Error(`Unsupported device. Detected services: ${[...serviceIds].join(', ')}. If this is your oximeter, it may expose a different service UUID or still be connected to another app.`);
+    throw new Error(`Unsupported device. This build officially supports only VTM 20F and Wellue/Viatom PO6B. Detected services: ${[...serviceIds].join(', ')}. If this is your oximeter, it may expose a different service UUID or still be connected to another app.`);
   }
 
   logInfo(`Using profile ${profile.id}`);
