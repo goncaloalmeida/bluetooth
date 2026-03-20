@@ -7,6 +7,8 @@
     "build": "rollup --c --environment BUILD:production",
     "dev": "rollup --c --environment BUILD:development",
     "watch": "rollup --config --environment BUILD:development --watch",
+    "watch:clean": "powershell -ExecutionPolicy Bypass -File ./scripts/start-clean.ps1",
+    "watch:clean:reinstall": "powershell -ExecutionPolicy Bypass -File ./scripts/start-clean.ps1 -Reinstall",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

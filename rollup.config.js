@@ -6,11 +6,23 @@ import html from "@open-wc/rollup-plugin-html";
 import { terser } from "rollup-plugin-terser";
 import serve from 'rollup-plugin-serve';
 
-import { readFileSync } from 'fs';
-
-import { LOCATION_TO_KEY } from './env.js';
+import { existsSync, readFileSync } from 'fs';
+import { join } from 'path';
 
 const dir = 'public';
+const buildTarget = process.env.BUILD || 'dev';
+const isProductionBuild = buildTarget === 'production';
+const shouldServe = !isProductionBuild;
+
+const certificateDirectory = process.env.LOCATION_TO_KEY;
+const https = certificateDirectory
+  && ['localhost-key.pem', 'localhost.pem', 'rootCA.pem'].every((file) => existsSync(join(certificateDirectory, file)))
+  ? {
+      key: readFileSync(join(certificateDirectory, 'localhost-key.pem')),
+      cert: readFileSync(join(certificateDirectory, 'localhost.pem')),
+      ca: readFileSync(join(certificateDirectory, 'rootCA.pem')),
+    }
+  : undefined;
 
 const config = {
   input: "src/index.html",
@@ -29,21 +41,17 @@ const config = {
     }),
     html(),
     //typescript(),
-    terser(),
-    serve({
+    ...(isProductionBuild ? [terser()] : []),
+    ...(shouldServe ? [serve({
       contentBase: dir,
       host: 'localhost',
       port: 20001,
-      https: {
-        key: readFileSync(LOCATION_TO_KEY + 'localhost-key.pem'),
-        cert: readFileSync(LOCATION_TO_KEY + 'localhost.pem'),
-        ca: readFileSync(LOCATION_TO_KEY + 'rootCA.pem'),
-      },
+      ...(https ? { https } : {}),
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
       },
       historyApiFallback: true,
-    }),
+    })] : []),
   ],
   preserveEntrySignatures: 'strict',
 };

@@ -76,8 +76,26 @@ class DemoView extends LitElement {
     this.beep = 0.3;
   }
   async _toggleConnection(e) {
-    this._deviceConnected = await toggleConnection();
-    if (this._deviceConnected) wakeLock();
+    try {
+      this._deviceConnected = await toggleConnection();
+      if (this._deviceConnected) wakeLock();
+    } catch (err) {
+      this._deviceConnected = false;
+      console.error('[UI] Bluetooth connection failed', err);
+
+      const name = err?.name || 'Error';
+      if (name === 'NotFoundError') {
+        alert('Bluetooth scan returned no selectable device. Keep the oximeter awake, close mobile apps (ViHealth), and try again.');
+        return;
+      }
+
+      if (name === 'SecurityError') {
+        alert('Bluetooth blocked by browser permissions. Allow Nearby devices/Bluetooth for this site and retry.');
+        return;
+      }
+
+      alert(`Bluetooth error: ${err?.message || err}`);
+    }
   }
   render() {
     const isHypoxic = this.sats !== null && this.sats < 98 ? true : false;
